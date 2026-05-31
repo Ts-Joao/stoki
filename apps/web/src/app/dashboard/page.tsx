@@ -15,37 +15,69 @@ import {
   BarChart,
   Bar,
 } from "recharts"
+import Link from "next/link"
 
 const stats = [
   {
     name: "Total de Produtos",
     value: "2.847",
     change: "+12%",
-    changeType: "positive" as const,
+    color: "blue",
     icon: Package,
+    href: "/dashboard/products"
   },
   {
     name: "Baixo Estoque",
     value: "23",
     change: "-5%",
-    changeType: "warning" as const,
+    color: "red",
     icon: AlertTriangle,
+    href: "/dashboard/products"
   },
   {
     name: "Produtos na Lixeira",
     value: "8",
     change: "+2",
-    changeType: "neutral" as const,
+    color: "slate",
     icon: Trash2,
+    href: "/dashboard/trash"
   },
   {
     name: "Movimentações Hoje",
     value: "156",
     change: "+18%",
-    changeType: "positive" as const,
+    color: "green",
     icon: TrendingUp,
+    href: "/dashboard/movements"
   },
-]
+] as const
+
+const colorClasses = {
+  blue: {
+    card: "border-t-4 border-t-blue-500",
+    iconBg: "bg-blue-100",
+    icon: "text-blue-600",
+    badge: "bg-blue-100 text-blue-700 hover:bg-blue-100",
+  },
+  red: {
+    card: "border-t-4 border-t-red-500",
+    iconBg: "bg-red-100",
+    icon: "text-red-600",
+    badge: "bg-red-100 text-red-700 hover:bg-red-100",
+  },
+  green: {
+    card: "border-t-4 border-t-green-500",
+    iconBg: "bg-green-100",
+    icon: "text-green-600",
+    badge: "bg-green-100 text-green-700 hover:bg-green-100",
+  },
+  slate: {
+    card: "border-t-4 border-t-slate-500",
+    iconBg: "bg-slate-100",
+    icon: "text-slate-600",
+    badge: "bg-slate-100 text-slate-700 hover:bg-slate-100",
+  },
+} as const
 
 const recentMovements = [
   { id: 1, product: "Teclado Sem Fio", type: "Entrada", quantity: 50, user: "João Silva", date: "2 min atrás" },
@@ -86,49 +118,61 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex gap-2">
-          <Button variant="outline">
-            Exportar Planilha
+          <Button variant="outline" className="cursor-pointer" asChild>
+            <Link href="/dashboard/export">
+              Exportar Planilha
+            </Link>
           </Button>
 
-          <Button>
-            Adicionar Produto
+          <Button className="cursor-pointer" asChild>
+            <Link href="/dashboard/products">
+              Adicionar Produto
+            </Link>
           </Button>
         </div>
       </div>
 
       {/* Stats Grid - Mobile optimized */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 sm:gap-4">
-        {stats.map((stat) => (
-          <Card key={stat.name} className="border-border/50">
-            <CardContent className="p-3 sm:p-4">
-              <div className="flex items-center justify-between">
-                <div className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${
-                  stat.changeType === "warning" ? "bg-red-100" : "bg-primary/10"
-                }`}>
-                  <stat.icon className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                    stat.changeType === "warning" ? "text-red-600" : "text-primary"
-                  }`} />
-                </div>
-                <Badge
-                  variant="secondary"
-                  className={`text-xs ${
-                    stat.changeType === "positive"
-                      ? "bg-green-100 text-green-700 hover:bg-green-100"
-                      : stat.changeType === "warning"
-                      ? "bg-red-100 text-red-700 hover:bg-red-100"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {stat.change}
-                </Badge>
-              </div>
-              <div className="mt-3">
-                <p className="text-xl sm:text-2xl font-semibold text-foreground">{stat.value}</p>
-                <p className="text-xs sm:text-sm text-muted-foreground">{stat.name}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {stats.map((stat) => {
+          const colors = colorClasses[stat.color]
+
+          return (
+            <Link href={stat.href} key={stat.name}>
+              <Card
+                className={`border-border/50 transition-all hover:shadow-md ${colors.card}`}
+              >
+                <CardContent className="p-3 sm:p-4">
+                  <div className="flex items-center justify-between">
+                    <div
+                      className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-lg ${colors.iconBg}`}
+                    >
+                      <stat.icon
+                        className={`w-4 h-4 sm:w-5 sm:h-5 ${colors.icon}`}
+                      />
+                    </div>
+
+                    <Badge
+                      variant="secondary"
+                      className={`text-xs ${colors.badge}`}
+                    >
+                      {stat.change}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-3">
+                    <p className="text-xl sm:text-2xl font-semibold text-foreground">
+                      {stat.value}
+                    </p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      {stat.name}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
+          )
+        })}
       </div>
 
       {/* Charts Row */}
@@ -261,11 +305,10 @@ export default function DashboardPage() {
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${
-                      movement.type === "Entrada"
-                        ? "bg-green-100 text-green-600"
-                        : "bg-red-100 text-red-600"
-                    }`}
+                    className={`flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg ${movement.type === "Entrada"
+                      ? "bg-green-100 text-green-600"
+                      : "bg-red-100 text-red-600"
+                      }`}
                   >
                     {movement.type === "Entrada" ? (
                       <ArrowDownRight className="w-4 h-4" />
@@ -281,9 +324,8 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`text-sm font-medium ${
-                    movement.type === "Entrada" ? "text-green-600" : "text-red-600"
-                  }`}>
+                  <p className={`text-sm font-medium ${movement.type === "Entrada" ? "text-green-600" : "text-red-600"
+                    }`}>
                     {movement.type === "Entrada" ? "+" : "-"}{movement.quantity} unidades
                   </p>
                   <p className="text-xs text-muted-foreground">{movement.date}</p>

@@ -118,7 +118,7 @@ export default function AuditLogsPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
               <Select value={selectedAction} onValueChange={setSelectedAction}>
-                <SelectTrigger className="w-full sm:w-40">
+                <SelectTrigger className="w-full sm:w-48">
                   <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
                   <SelectValue placeholder="Ação" />
                 </SelectTrigger>
@@ -131,7 +131,7 @@ export default function AuditLogsPage() {
                 </SelectContent>
               </Select>
               <Select value={selectedEntity} onValueChange={setSelectedEntity}>
-                <SelectTrigger className="w-full sm:w-40">
+                <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Entidade" />
                 </SelectTrigger>
                 <SelectContent>

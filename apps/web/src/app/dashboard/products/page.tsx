@@ -123,7 +123,7 @@ export default function ProductsPage() {
               </SelectTrigger>
               <SelectContent>
                 {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
+                  <SelectItem key={category} value={category} className="cursor-pointer" >
                     {category}
                   </SelectItem>
                 ))}
@@ -209,11 +209,11 @@ export default function ProductsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditingProduct(product)}>
+                          <DropdownMenuItem className="cursor-pointer" onClick={() => setEditingProduct(product)}>
                             <Edit className="w-4 h-4 mr-2" />
                             Editar
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem className="cursor-pointer text-destructive">
                             <Trash2 className="w-4 h-4 mr-2" />
                             Excluir
                           </DropdownMenuItem>
@@ -236,16 +236,17 @@ export default function ProductsPage() {
         }
       }}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editingProduct ? "Editar Produto" : "Adicionar Novo Produto"}</DialogTitle>
-            <DialogDescription>
-              {editingProduct ? "Atualize os detalhes do produto abaixo." : "Preencha os detalhes para adicionar um novo produto."}
-            </DialogDescription>
-          </DialogHeader>
+          <form action={() => { setIsAddModalOpen(false); setEditingProduct(null) }}>
+            <DialogHeader>
+              <DialogTitle>{editingProduct ? "Editar Produto" : "Adicionar Novo Produto"}</DialogTitle>
+              <DialogDescription>
+                {editingProduct ? "Atualize os detalhes do produto abaixo." : "Preencha os detalhes para adicionar um novo produto."}
+              </DialogDescription>
+            </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Nome do Produto</label>
-              <Input placeholder="Digite o nome do produto" defaultValue={editingProduct?.name} />
+              <Input placeholder="Digite o nome do produto" defaultValue={editingProduct?.name} required />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Descrição</label>
@@ -254,7 +255,7 @@ export default function ProductsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Quantidade</label>
-                <Input type="number" placeholder="0" defaultValue={editingProduct?.quantity} />
+                <Input type="number" placeholder="0" defaultValue={editingProduct?.quantity} required />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">Estoque Mínimo</label>
@@ -263,7 +264,7 @@ export default function ProductsPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-foreground">Localização</label>
-              <Select defaultValue={editingProduct?.location}>
+              <Select defaultValue={editingProduct?.location} required >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a localização" />
                 </SelectTrigger>
@@ -297,13 +298,11 @@ export default function ProductsPage() {
             }}>
               Cancelar
             </Button>
-            <Button onClick={() => {
-              setIsAddModalOpen(false)
-              setEditingProduct(null)
-            }}>
+            <Button type="submit">
               {editingProduct ? "Salvar Alterações" : "Adicionar Produto"}
             </Button>
           </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

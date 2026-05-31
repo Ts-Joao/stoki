@@ -98,13 +98,13 @@ export default function MovementsPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-4">
               <Select value={selectedDate} onValueChange={setSelectedDate}>
-                <SelectTrigger className="w-full sm:w-40">
+                <SelectTrigger className="w-full sm:w-42">
                   <Calendar className="w-4 h-4 mr-2 text-muted-foreground" />
                   <SelectValue placeholder="Data" />
                 </SelectTrigger>
                 <SelectContent>
                   {dateRanges.map((range) => (
-                    <SelectItem key={range} value={range}>
+                    <SelectItem key={range} value={range} className="cursor-pointer">
                       {range}
                     </SelectItem>
                   ))}
@@ -116,20 +116,20 @@ export default function MovementsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {products.map((product) => (
-                    <SelectItem key={product} value={product}>
+                    <SelectItem key={product} value={product} className="cursor-pointer">
                       {product}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-full sm:w-36">
+                <SelectTrigger className="w-full sm:w-46">
                   <Filter className="w-4 h-4 mr-2 text-muted-foreground" />
                   <SelectValue placeholder="Tipo" />
                 </SelectTrigger>
                 <SelectContent>
                   {movementTypes.map((type) => (
-                    <SelectItem key={type} value={type}>
+                    <SelectItem key={type} value={type} className="cursor-pointer">
                       {type}
                     </SelectItem>
                   ))}

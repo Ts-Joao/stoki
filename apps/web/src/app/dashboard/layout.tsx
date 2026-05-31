@@ -4,7 +4,6 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
-  Package,
   LayoutDashboard,
   Boxes,
   ArrowLeftRight,
@@ -141,14 +140,14 @@ export default function DashboardLayout({
             </div>
 
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" className="relative">
+              <Button variant="ghost" size="icon" className="relative cursor-pointer">
                 <Bell className="w-5 h-5 text-muted-foreground" />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
               </Button>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 px-2">
+                  <Button variant="ghost" className="flex items-center gap-2 px-2 cursor-pointer">
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                       <span className="text-sm font-medium text-primary">JD</span>
                     </div>
@@ -161,14 +160,14 @@ export default function DashboardLayout({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard/settings">
+                    <Link href="/dashboard/settings" className="cursor-pointer">
                       <Settings className="w-4 h-4 mr-2" />
                       Configurações
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/">
+                    <Link href="/" className="cursor-pointer">
                       <LogOut className="w-4 h-4 mr-2" />
                       Sair
                     </Link>
