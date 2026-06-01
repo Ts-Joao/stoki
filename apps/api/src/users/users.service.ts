@@ -1,0 +1,123 @@
+import {
+  HttpException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException
+} from '@nestjs/common';
+import { DatabaseService } from 'src/database/database.service';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+
+@Injectable()
+export class UsersService {
+  constructor(private readonly databaseService: DatabaseService) {}
+
+  async findAll() {
+    try {
+      return this.databaseService.user.findMany();
+    } catch (error) {
+      throw new InternalServerErrorException("Error to find all users", error);
+    }
+  }
+
+  async findByName(name: string) {
+    try {
+      const user = await this.databaseService.user.findUnique({
+        where: {
+          name,
+        },
+      });
+
+      if(!user) {
+        throw new NotFoundException("User not found");
+      }
+
+      return user;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException("Error to find user by name", error);
+    }
+  }
+
+  async findById(id: string) {
+    try {
+      const user = await this.databaseService.user.findUnique({
+        where: {
+          id,
+        },
+      });
+
+      if(!user) {
+        throw new NotFoundException("User not found");
+      }
+
+      return user;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException("Error to find user by id", error);
+    }
+  }
+
+  async create(dto: CreateUserDto) {
+    try {
+      const user = await this.databaseService.user.create({
+        data: dto
+      });
+
+      return user;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException("Error to create user", error);
+    }
+  }
+
+  async update(id: string, data: UpdateUserDto) {
+    try {
+      await this.findById(id);
+
+      const user = await this.databaseService.user.update({
+        where: {
+          id,
+        },
+        data,
+      });
+
+      return user;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException("Error to update user", error);
+    }
+  }
+
+  async delete(id: string) {
+    try {
+      await this.findById(id);
+
+      const userDeleted = await this.databaseService.user.delete({
+        where: {
+          id,
+        },
+      });
+
+      return userDeleted;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException("Error to delete user", error);
+    }
+  }
+}
