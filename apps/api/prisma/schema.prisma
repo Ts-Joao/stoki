@@ -6,37 +6,92 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  ADMIN
+  WAREHOUSE_STAFF
+}
+
 model User {
   id           String   @id @default(uuid())
   name         String   @unique
   passwordHash String   @map("password_hash")
+  role         UserRole @default(WAREHOUSE_STAFF)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+
+  stockMovents StockMovent[]
 
   @@index([name])
   @@map("user")
 }
 
 model Product {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  description String
-  price       Decimal? @default(0.0)
-  stock       Int      @default(0)
-  minStock    Int      @default(1)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  stock       Int
+  minStock    Int       @default(1) @map("min_stock")
+  deletedAt   DateTime? @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  locationId Int
+  location   Location @relation(fields: [locationId], references: [id])
+
+  stockMovents StockMovent[]
 
   @@index([name])
+  @@index([categoryId])
+  @@index([locationId])
   @@map("product")
 }
 
 model Category {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   name      String   @unique
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  products Product[]
+
   @@index([name])
   @@map("category")
+}
+
+model Location {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  products Product[]
+
+  @@index([name])
+  @@map("location")
+}
+
+enum StockMoventType {
+  IN
+  OUT
+}
+
+model StockMovent {
+  id        String          @id @default(uuid())
+  type      StockMoventType
+  quantity  Int
+  createdAt DateTime        @default(now()) @map("created_at")
+  updatedAt DateTime        @updatedAt @map("updated_at")
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([productId])
+  @@map("stock_movent")
 }
