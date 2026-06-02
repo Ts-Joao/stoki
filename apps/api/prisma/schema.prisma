@@ -15,6 +15,7 @@ model User {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
+  products Product[]
   stockMovents StockMovent[]
 
   @@index([name])
@@ -28,10 +29,13 @@ model Product {
   stock        Int
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
-  categoryId   Int
   deletedAt    DateTime?     @map("deleted_at")
-  locationId   Int
   minStock     Int           @default(1) @map("min_stock")
+  
+  categoryId   Int
+  locationId   Int
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
   category     Category      @relation(fields: [categoryId], references: [id])
   location     Location      @relation(fields: [locationId], references: [id])
   stockMovents StockMovent[]
