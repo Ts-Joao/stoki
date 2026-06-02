@@ -7,10 +7,14 @@ import {
 import { DatabaseService } from 'src/database/database.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { HashingServiceProtocol } from 'src/auth/hash/hashing.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly hashingService: HashingServiceProtocol,
+    private readonly databaseService: DatabaseService
+  ) {}
 
   async findAll() {
     try {
@@ -66,8 +70,15 @@ export class UsersService {
 
   async create(dto: CreateUserDto) {
     try {
+      const { password, ...restDto } = dto;
+
+      const hashedPassword = await this.hashingService.hash(password);
+
       const user = await this.databaseService.user.create({
-        data: dto
+        data: {
+          ...restDto,
+          password: hashedPassword
+        }
       });
 
       return user;

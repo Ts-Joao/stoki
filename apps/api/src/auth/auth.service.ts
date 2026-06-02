@@ -30,7 +30,7 @@ export class AuthService {
         throw new UnauthorizedException('Invalid credentials');
       }
 
-      const passwordMatch = await this.hashingService.compare(loginDto.password, user!.password)
+      const passwordMatch = await this.hashingService.compare(loginDto.password, user.password)
 
       if (!passwordMatch) {
         throw new UnauthorizedException('Invalid credentials');
@@ -133,7 +133,7 @@ export class AuthService {
   private generateAccessToken(payload: TokenPayloadDto) : string {
     const accessToken = this.jwtService.sign(payload,
       {
-        secret: this.configService.get<string>('JWT_SECRET'),
+        secret: this.configService.get<string>('JWT_SECRET')!,
         expiresIn: this.configService.get<number>('JWT_TTL')
       });
     return accessToken;
