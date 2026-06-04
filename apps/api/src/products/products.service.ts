@@ -9,34 +9,47 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { LocationsService } from 'src/locations/locations.service';
 import { CategoriesService } from 'src/categories/categories.service';
+import { TypeCreateMoviment } from '../movements/types/create-moviment.type';
+import { Prisma, Product, StockMoventType } from '@prisma/client';
 
 @Injectable()
 export class ProductsService {
   constructor(
     private readonly databaseServce: DatabaseService,
     private readonly categoriesService: CategoriesService,
-    private readonly locationsService: LocationsService
+    private readonly locationsService: LocationsService,
   ) {}
 
   async create(dto: CreateProductDto, userId: string) {
     try {
-      await this.categoriesService.findOne(dto.categoryId)
-      await this.locationsService.findOne(dto.locationId)
+      await this.categoriesService.findOne(dto.categoryId);
+      await this.locationsService.findOne(dto.locationId);
 
-      const product = await this.databaseServce.product.create({
-        data: {
-          ...dto,
-          userId
-        }
-      })
+      const product = await this.databaseServce.$transaction(async (tx) => {
+        const newProduct = await tx.product.create({
+          data: {
+            ...dto,
+            userId,
+          },
+        });
+
+        await this.createStockMovement(tx, {
+          productId: newProduct.id,
+          userId,
+          quantity: dto.stock,
+          type: 'IN',
+        });
+
+        return newProduct;
+      });
 
       return product;
     } catch (error) {
       if (error instanceof HttpException) {
-        throw error
+        throw error;
       }
 
-      throw new InternalServerErrorException('Error creating product: ', error)
+      throw new InternalServerErrorException('Error creating product: ', error);
     }
   }
 
@@ -44,15 +57,15 @@ export class ProductsService {
     try {
       return this.databaseServce.product.findMany({
         where: {
-          deletedAt: null
-        }
-      })
+          deletedAt: null,
+        },
+      });
     } catch (error) {
       if (error instanceof HttpException) {
-        throw error
+        throw error;
       }
 
-      throw new InternalServerErrorException('Error finding products: ', error)
+      throw new InternalServerErrorException('Error finding products: ', error);
     }
   }
 
@@ -60,100 +73,135 @@ export class ProductsService {
     try {
       const product = await this.databaseServce.product.findUnique({
         where: {
-          id
-        }
-      })
+          id,
+        },
+      });
 
       if (!product) {
-        throw new NotFoundException('Product not found')
+        throw new NotFoundException('Product not found');
       }
 
-      return product
+      return product;
     } catch (error) {
       if (error instanceof HttpException) {
-        throw error
+        throw error;
       }
 
-      throw new InternalServerErrorException('Error finding product: ', error)
+      throw new InternalServerErrorException('Error finding product: ', error);
     }
   }
 
   async update(id: string, dto: UpdateProductDto) {
     try {
-      await this.findOne(id)
+      const product = await this.findOne(id);
 
-      return this.databaseServce.product.update({
-        where: {
-          id
+      let movType: StockMoventType;
+      let quantityDiff: number;
+
+      console.log(dto)
+      const updatedProduct = await this.databaseServce.$transaction(
+        async (tx) => {
+          if (dto.stock !== undefined && dto.stock > 0) {
+            const movement = this.getStockAdjustment(product, dto.stock);
+
+            if (movement) {
+              movType = movement.type;
+              quantityDiff = movement.diff;
+            }
+          }
+
+          const productUpdated = await tx.product.update({
+            where: {
+              id,
+            },
+            data: dto,
+          });
+
+          await this.createStockMovement(tx, {
+            productId: productUpdated.id,
+            userId: productUpdated.userId,
+            quantity: quantityDiff,
+            type: movType,
+          });
+
+          return productUpdated;
         },
-        data: dto
-      })
+      );
+
+      return updatedProduct;
     } catch (error) {
       if (error instanceof HttpException) {
-        throw error
+        throw error;
       }
 
-      throw new InternalServerErrorException('Error updating product: ', error)
+      console.error(error)
+      throw new InternalServerErrorException('Error updating product: ', error);
     }
-  } 
-  
+  }
+
   async remove(id: string) {
     try {
-      await this.findOne(id)
+      await this.findOne(id);
 
       return this.databaseServce.product.update({
         where: {
-          id
+          id,
         },
         data: {
-          deletedAt: new Date(Date.now() + 30 * 60 * 1000)
-        }
-      })
+          deletedAt: new Date(Date.now() + 30 * 60 * 1000),
+        },
+      });
     } catch (error) {
       if (error instanceof HttpException) {
-        throw error
+        throw error;
       }
 
-      throw new InternalServerErrorException('Error removing product: ', error)
+      throw new InternalServerErrorException('Error removing product: ', error);
     }
   }
 
   async hardDelete(id: string) {
     try {
-      await this.findOne(id)
+      await this.findOne(id);
 
       return this.databaseServce.product.delete({
         where: {
-          id
-        }
-      })
+          id,
+        },
+      });
     } catch (error) {
       if (error instanceof HttpException) {
-        throw error
+        throw error;
       }
 
-      throw new InternalServerErrorException('Error hard deleting product: ', error)
+      throw new InternalServerErrorException(
+        'Error hard deleting product: ',
+        error,
+      );
     }
   }
 
   async restore(id: string) {
     try {
-      await this.findOne(id)
+      await this.findOne(id);
 
       return this.databaseServce.product.update({
         where: {
-          id
+          id,
         },
         data: {
-          deletedAt: null
-        }
-      })
+          deletedAt: null,
+        },
+      });
     } catch (error) {
       if (error instanceof HttpException) {
-        throw error
+        throw error;
       }
 
-      throw new InternalServerErrorException('Error restoring product: ', error)
+      throw new InternalServerErrorException(
+        'Error restoring product: ',
+        error,
+      );
     }
   }
 
@@ -161,17 +209,45 @@ export class ProductsService {
     try {
       const products = await this.databaseServce.product.findMany({
         where: {
-          deletedAt: { not: null }
-        }
-      })
+          deletedAt: { not: null },
+        },
+      });
 
-      return products
+      return products;
     } catch (error) {
       if (error instanceof HttpException) {
-        throw error
+        throw error;
       }
 
-      throw new InternalServerErrorException('Error finding products: ', error)
+      throw new InternalServerErrorException('Error finding products: ', error);
     }
+  }
+
+  private async createStockMovement(
+    tx: Prisma.TransactionClient,
+    data: TypeCreateMoviment,
+  ) {
+    return tx.stockMovent.create({
+      data: {
+        ...data,
+        type: 'ADJUSTMENT'
+      },
+    });
+  }
+
+  private getStockAdjustment(product: Product, dtoStock: number) {
+    return this.calculateStockDifference(dtoStock, product.stock);
+  }
+
+  private calculateStockDifference(newStock: number, oldStock: number) {
+    if (newStock > oldStock) {
+      return { diff: newStock - oldStock, type: 'IN' as StockMoventType };
+    }
+
+    if (newStock < oldStock) {
+      return { diff: oldStock - newStock, type: 'OUT' as StockMoventType };
+    }
+
+    return null;
   }
 }

@@ -71,9 +71,11 @@ model Location {
 model StockMovent {
   id        String          @id @default(uuid())
   type      StockMoventType
-  quantity  Int
+  quantity  Int?
+  note      String?
   createdAt DateTime        @default(now()) @map("created_at")
   updatedAt DateTime        @updatedAt @map("updated_at")
+
   productId String
   userId    String
   product   Product         @relation(fields: [productId], references: [id])
@@ -92,4 +94,5 @@ enum UserRole {
 enum StockMoventType {
   IN
   OUT
+  ADJUSTMENT
 }
