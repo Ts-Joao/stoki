@@ -33,6 +33,11 @@ export class ProductsController {
     return this.productsService.findAll()
   }
 
+  @Get('with-deleted')
+  findAllSoftDeleted() {
+    return this.productsService.findAllWithDeleted()
+  }
+
   @Get(':productId')
   findOne(@Param('productId', ParseUUIDPipe) productId: string) {
     return this.productsService.findOne(productId)
@@ -46,6 +51,11 @@ export class ProductsController {
     return this.productsService.update(productId, dto)
   }
 
+  @Patch('restore/:productId')
+  restore(@Param('productId', ParseUUIDPipe) productId: string) {
+    return this.productsService.restore(productId)
+  }
+
   @Delete(':productId')
   remove(@Param('productId', ParseUUIDPipe) productId: string) {
     return this.productsService.remove(productId)
@@ -54,15 +64,5 @@ export class ProductsController {
   @Delete('hard-delete/:productId')
   hardDelete(@Param('productId', ParseUUIDPipe) productId: string) {
     return this.productsService.hardDelete(productId)
-  }
-
-  @Patch('restore/:productId')
-  restore(@Param('productId', ParseUUIDPipe) productId: string) {
-    return this.productsService.restore(productId)
-  }
-
-  @Get('with-deleted')
-  findAllWithDeleted() {
-    return this.productsService.findAllWithDeleted()
   }
 }

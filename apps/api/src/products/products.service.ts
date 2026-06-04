@@ -9,7 +9,6 @@ export class ProductsService {
 
   async create(dto: CreateProductDto, userId: string) {
     try {
-      console.log(userId)
       const product = await this.databaseServce.product.create({
         data: {
           ...dto,
@@ -17,15 +16,12 @@ export class ProductsService {
         }
       })
 
-      console.log(product)
-
       return product;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error
       }
 
-      console.error(error.message)
       throw new InternalServerErrorException('Error creating product: ', error)
     }
   }
@@ -149,13 +145,13 @@ export class ProductsService {
 
   async findAllWithDeleted() {
     try {
-      return this.databaseServce.product.findMany({
+      const products = await this.databaseServce.product.findMany({
         where: {
-          deletedAt: {
-            not: null
-          }
+          deletedAt: { not: null }
         }
       })
+
+      return products
     } catch (error) {
       if (error instanceof HttpException) {
         throw error
