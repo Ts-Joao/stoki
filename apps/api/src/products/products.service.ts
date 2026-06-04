@@ -1,14 +1,28 @@
-import { HttpException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  HttpException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { LocationsService } from 'src/locations/locations.service';
+import { CategoriesService } from 'src/categories/categories.service';
 
 @Injectable()
 export class ProductsService {
-  constructor(private readonly databaseServce: DatabaseService ) {}
+  constructor(
+    private readonly databaseServce: DatabaseService,
+    private readonly categoriesService: CategoriesService,
+    private readonly locationsService: LocationsService
+  ) {}
 
   async create(dto: CreateProductDto, userId: string) {
     try {
+      await this.categoriesService.findOne(dto.categoryId)
+      await this.locationsService.findOne(dto.locationId)
+
       const product = await this.databaseServce.product.create({
         data: {
           ...dto,
