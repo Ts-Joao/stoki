@@ -56,7 +56,7 @@ export class ProductsService {
 
   async findAll() {
     try {
-      return this.databaseServce.product.findMany({
+      return await this.databaseServce.product.findMany({
         where: {
           deletedAt: null,
         },
@@ -102,10 +102,7 @@ export class ProductsService {
 
       const updatedProduct = await this.databaseServce.$transaction(
         async (tx) => {
-          console.log('entrou')
-          console.log(movType)
           if (dto.stock !== undefined && dto.stock > 0) {
-            console.log('rodou')
             const movement = this.getStockAdjustment(product, dto.stock);
 
             if (movement) {
@@ -122,7 +119,6 @@ export class ProductsService {
             data: dto,
           });
 
-          console.log(movType)
           await this.createStockMovement(tx, {
             productId: productUpdated.id,
             userId: productUpdated.userId,
@@ -141,7 +137,6 @@ export class ProductsService {
         throw error;
       }
 
-      console.error(error)
       throw new InternalServerErrorException('Error updating product: ', error);
     }
   }
