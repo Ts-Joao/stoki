@@ -57,7 +57,7 @@ describe('LocationsService', () => {
   describe('create', () => {
     const dto: CreateLocationDto = { name: 'Location A' } 
 
-    it('should create a category successfully', async () => {
+    it('should create a location successfully', async () => {
       locationFindUniqueMock.mockResolvedValue(null)
 
       const result = await locationsService.create(dto)
@@ -73,7 +73,7 @@ describe('LocationsService', () => {
       expect(result).toEqual(mockLocation)
     })
 
-    it('should throw ConflictException when category already exists', async () =>{
+    it('should throw ConflictException when location already exists', async () =>{
       locationFindUniqueMock.mockResolvedValue(mockLocation)
 
       await expect(locationsService.create(dto)).rejects.toBeInstanceOf(
