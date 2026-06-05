@@ -60,9 +60,4 @@ export class ProductsController {
   remove(@Param('productId', ParseUUIDPipe) productId: string) {
     return this.productsService.remove(productId)
   }
-
-  @Delete('hard-delete/:productId')
-  hardDelete(@Param('productId', ParseUUIDPipe) productId: string) {
-    return this.productsService.hardDelete(productId)
-  }
 }

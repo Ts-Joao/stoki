@@ -167,27 +167,6 @@ export class ProductsService {
     }
   }
 
-  async hardDelete(id: string) {
-    try {
-      await this.findOne(id);
-
-      return this.databaseServce.product.delete({
-        where: {
-          id,
-        },
-      });
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      throw new InternalServerErrorException(
-        'Error hard deleting product: ',
-        error,
-      );
-    }
-  }
-
   async restore(id: string) {
     try {
       await this.findOne(id);
