@@ -37,7 +37,7 @@ export class LocationsService {
 
   async findAll() {
     try {
-      return this.databaseService.location.findMany()
+      return await this.databaseService.location.findMany()
     } catch (error) {
       if(error instanceof HttpException) {
         throw error;
@@ -94,7 +94,7 @@ export class LocationsService {
     try {
       await this.findOne(id);
 
-      return this.databaseService.location.update({
+      return await this.databaseService.location.update({
         where: { id },
         data: dto,
       });
@@ -111,7 +111,7 @@ export class LocationsService {
     try {
       await this.findOne(id);
 
-      return this.databaseService.location.delete({
+      return await this.databaseService.location.delete({
         where: { id },
       });
     } catch (error) {

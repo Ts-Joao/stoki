@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   HttpException,
   Injectable,
   InternalServerErrorException,
@@ -18,7 +19,7 @@ export class UsersService {
 
   async findAll() {
     try {
-      return this.databaseService.user.findMany();
+      return await this.databaseService.user.findMany();
     } catch (error) {
       throw new InternalServerErrorException("Error to find all users", error);
     }
@@ -31,10 +32,6 @@ export class UsersService {
           name,
         },
       });
-
-      if(!user) {
-        throw new NotFoundException("User not found");
-      }
 
       return user;
     } catch (error) {
@@ -70,6 +67,12 @@ export class UsersService {
 
   async create(dto: CreateUserDto) {
     try {
+      const userExists = await this.findByName(dto.name);
+
+      if(userExists) {
+        throw new ConflictException("User already exists");
+      }
+
       const { password, ...restDto } = dto;
 
       const hashedPassword = await this.hashingService.hash(password);
