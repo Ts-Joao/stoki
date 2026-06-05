@@ -38,6 +38,7 @@ export class ProductsService {
           userId,
           quantity: dto.stock,
           type: 'IN',
+          note: dto.description ?? 'Produto adicionado ao estoque',
         });
 
         return newProduct;
@@ -95,18 +96,22 @@ export class ProductsService {
     try {
       const product = await this.findOne(id);
 
-      let movType: StockMoventType;
+      let movType: StockMoventType = 'ADJUSTMENT';
       let quantityDiff: number;
+      let note: string = 'Produto ajustado';
 
-      console.log(dto)
       const updatedProduct = await this.databaseServce.$transaction(
         async (tx) => {
+          console.log('entrou')
+          console.log(movType)
           if (dto.stock !== undefined && dto.stock > 0) {
+            console.log('rodou')
             const movement = this.getStockAdjustment(product, dto.stock);
 
             if (movement) {
               movType = movement.type;
               quantityDiff = movement.diff;
+              note = movement.note;
             }
           }
 
@@ -117,10 +122,12 @@ export class ProductsService {
             data: dto,
           });
 
+          console.log(movType)
           await this.createStockMovement(tx, {
             productId: productUpdated.id,
             userId: productUpdated.userId,
             quantity: quantityDiff,
+            note: note,
             type: movType,
           });
 
@@ -227,12 +234,7 @@ export class ProductsService {
     tx: Prisma.TransactionClient,
     data: TypeCreateMoviment,
   ) {
-    return tx.stockMovent.create({
-      data: {
-        ...data,
-        type: 'ADJUSTMENT'
-      },
-    });
+    return tx.stockMovent.create({ data });
   }
 
   private getStockAdjustment(product: Product, dtoStock: number) {
@@ -241,11 +243,11 @@ export class ProductsService {
 
   private calculateStockDifference(newStock: number, oldStock: number) {
     if (newStock > oldStock) {
-      return { diff: newStock - oldStock, type: 'IN' as StockMoventType };
+      return { diff: newStock - oldStock, type: 'IN' as StockMoventType, note: 'Produto adicionado ao estoque' };
     }
 
     if (newStock < oldStock) {
-      return { diff: oldStock - newStock, type: 'OUT' as StockMoventType };
+      return { diff: oldStock - newStock, type: 'OUT' as StockMoventType, note: 'Produto abaixado do estoque' };
     }
 
     return null;
