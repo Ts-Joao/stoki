@@ -18,7 +18,7 @@ export class UsersService {
 
   async findAll() {
     try {
-      return this.databaseService.user.findMany();
+      return await this.databaseService.user.findMany();
     } catch (error) {
       throw new InternalServerErrorException("Error to find all users", error);
     }
