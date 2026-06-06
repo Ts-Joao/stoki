@@ -8,6 +8,8 @@ import { ProductsModule } from 'src/products/products.module';
 import { CategoriesModule } from 'src/categories/categories.module';
 import { LocationsModule } from 'src/locations/locations.module';
 import { MovementsModule } from 'src/movements/movements.module';
+import { DashboardModule } from 'src/dashboard/dashboard.module';
+import { AuditModule } from 'src/audit/audit.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { MovementsModule } from 'src/movements/movements.module';
     CategoriesModule,
     LocationsModule,
     MovementsModule,
+    DashboardModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [AppService],

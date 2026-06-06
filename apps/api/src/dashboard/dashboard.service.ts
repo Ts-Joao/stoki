@@ -56,8 +56,8 @@ export class DashboardService {
     try {
       const products = (await this.databaseService.$queryRaw`
       SELECT COUNT(*)
-      FROM products
-      WHERE deletedAt IS NULL
+      FROM product
+      WHERE deleted_at IS NULL
       AND stock <= min_stock
       `) as { count: bigint }[];
 
@@ -69,6 +69,7 @@ export class DashboardService {
         throw error;
       }
 
+      console.error(error)
       throw new InternalServerErrorException(
         'Failed to get low stock products',
       );
