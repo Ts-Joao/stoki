@@ -9,12 +9,15 @@ import { DatabaseService } from 'src/database/database.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { HashingServiceProtocol } from 'src/auth/hash/hashing.service';
+import { AuditService } from 'src/audit/audit.service';
+import { AuditAction, EntityType } from '@prisma/client';
 
 @Injectable()
 export class UsersService {
   constructor(
     private readonly hashingService: HashingServiceProtocol,
-    private readonly databaseService: DatabaseService
+    private readonly databaseService: DatabaseService,
+    private readonly auditService: AuditService,
   ) {}
 
   async findAll() {
@@ -77,14 +80,26 @@ export class UsersService {
 
       const hashedPassword = await this.hashingService.hash(password);
 
-      const user = await this.databaseService.user.create({
-        data: {
-          ...restDto,
-          password: hashedPassword
-        }
+      const createUser = await this.databaseService.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            ...restDto,
+            password: hashedPassword
+          }
+        });
+
+        await this.auditService.createAudit(tx, {
+          entityType: EntityType.USER,
+          entityId: user.id,
+          action: AuditAction.CREATE,
+          userId: user.id,
+          details: { name: user.name },
+        });
+
+        return user;
       });
 
-      return user;
+      return createUser;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -98,14 +113,26 @@ export class UsersService {
     try {
       await this.findById(id);
 
-      const user = await this.databaseService.user.update({
-        where: {
-          id,
-        },
-        data,
+      const updatedUser = await this.databaseService.$transaction(async (tx) => {
+        const user = await tx.user.update({
+          where: {
+            id,
+          },
+          data,
+        });
+
+        await this.auditService.createAudit(tx, {
+          entityType: EntityType.USER,
+          entityId: user.id,
+          action: AuditAction.UPDATE,
+          userId: user.id,
+          details: { ...data },
+        });
+
+        return user;
       });
 
-      return user;
+      return updatedUser;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
