@@ -35,6 +35,37 @@ export class DashboardService {
     }
   }
 
+  async getRecentMovements() {
+    try {
+      const movements = await this.databaseService.stockMovent.findMany({
+        take: 5,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          product: {
+            select: {
+              name: true,
+            },
+          },
+          user: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+
+      return movements;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Failed to get recent movements');
+    }
+  }
+
   async getAllProducts() {
     try {
       const products = await this.databaseService.product.count({
@@ -47,7 +78,6 @@ export class DashboardService {
         throw error;
       }
 
-      // console.error(error)
       throw new InternalServerErrorException('Failed to get all products');
     }
   }
@@ -69,7 +99,6 @@ export class DashboardService {
         throw error;
       }
 
-      console.error(error)
       throw new InternalServerErrorException(
         'Failed to get low stock products',
       );

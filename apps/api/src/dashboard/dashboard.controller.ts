@@ -15,4 +15,9 @@ export class DashboardController {
   async getStats() {
     return this.dashboardService.getStats();
   }
+
+  @Get('recent-movements')
+  async getRecentMovements() {
+    return this.dashboardService.getRecentMovements();
+  }
 }

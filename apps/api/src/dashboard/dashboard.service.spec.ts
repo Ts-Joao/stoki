@@ -10,11 +10,13 @@ describe('DashboardService', () => {
   let productCountMock: jest.Mock;
   let queryRawMock: jest.Mock;
   let stockMoventCountMock: jest.Mock;
+  let stockMoventFindManyMock: jest.Mock;
 
   beforeEach(async () => {
     productCountMock = jest.fn().mockResolvedValue(0);
     queryRawMock = jest.fn().mockResolvedValue([ { count: BigInt(0) } ]);
     stockMoventCountMock = jest.fn().mockResolvedValue(0);
+    stockMoventFindManyMock = jest.fn().mockResolvedValue([]);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -28,6 +30,7 @@ describe('DashboardService', () => {
             $queryRaw: queryRawMock,
             stockMovent: {
               count: stockMoventCountMock,
+              findMany: stockMoventFindManyMock,
             },
           },
         },
@@ -148,6 +151,25 @@ describe('DashboardService', () => {
       await expect(dashboardService.getStats()).rejects.toBeInstanceOf(
         InternalServerErrorException
       );
+    });
+  });
+
+  describe('getRecentMovements', () => {
+    it('should return the recent movements', async () => {
+      const movements = await dashboardService.getRecentMovements();
+      expect(movements).toEqual([]);
+
+      expect(stockMoventFindManyMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should throw InternalServerErrorException when database error', async () => {
+      stockMoventFindManyMock.mockRejectedValue(new Error('Database error'));
+
+      await expect(dashboardService.getRecentMovements()).rejects.toBeInstanceOf(
+        InternalServerErrorException
+      );
+
+      expect(stockMoventFindManyMock).toHaveBeenCalledTimes(1);
     });
   });
 });
