@@ -4,6 +4,8 @@ import { HashingServiceProtocol } from 'src/auth/hash/hashing.service';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, InternalServerErrorException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
+import { AuditService } from 'src/audit/audit.service';
+import { EntityType } from '@prisma/client';
 
 describe('UsersService', () => {
   let usersFindUniqueMock: jest.Mock;
@@ -11,10 +13,13 @@ describe('UsersService', () => {
   let usersCreateMock: jest.Mock;
   let usersUpdateMock: jest.Mock;
   let usersDeleteMock: jest.Mock;
+  let transactionMock: jest.Mock;
+  let auditCreateMock: jest.Mock;
 
   let usersService: UsersService; 
   let databaseService: DatabaseService;
   let hashingService: HashingServiceProtocol;
+  let auditService: AuditService;
 
   const mockUsers = {
     id: 'user-id',
@@ -28,6 +33,22 @@ describe('UsersService', () => {
     usersCreateMock = jest.fn().mockResolvedValue(mockUsers);
     usersUpdateMock = jest.fn().mockResolvedValue(mockUsers);
     usersDeleteMock = jest.fn().mockResolvedValue(mockUsers);
+    auditCreateMock = jest.fn().mockResolvedValue({ id: 'audit-id' });
+
+    transactionMock = jest.fn().mockImplementation(async (callback) => {
+      return callback({
+        user: {
+          findUnique: usersFindUniqueMock,
+          findMany: usersFindManyMock,
+          create: usersCreateMock,
+          update: usersUpdateMock,
+          delete: usersDeleteMock,
+        },
+        audit: {
+          createAudit: auditCreateMock,
+        },
+      })
+    })
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -35,6 +56,7 @@ describe('UsersService', () => {
         {
           provide: DatabaseService,
           useValue: {
+            $transaction: transactionMock,
             user: {
               findUnique: usersFindUniqueMock,
               findMany: usersFindManyMock,
@@ -50,12 +72,19 @@ describe('UsersService', () => {
             hash: jest.fn().mockResolvedValue('hashed_password'),
           }
         },
+        {
+          provide: AuditService,
+          useValue: {
+            createAudit: auditCreateMock,
+          }
+        }
       ],
     }).compile();
 
     usersService = module.get<UsersService>(UsersService);
     databaseService = module.get<DatabaseService>(DatabaseService);
     hashingService = module.get<HashingServiceProtocol>(HashingServiceProtocol);
+    auditService = module.get<AuditService>(AuditService);
   });
 
   it('should be defined', () => {
@@ -73,12 +102,25 @@ describe('UsersService', () => {
 
       const result = await usersService.create(dto);
 
+      expect(transactionMock).toHaveBeenCalledTimes(1)
       expect(usersCreateMock).toHaveBeenCalledWith({
         data: {
           name: dto.name,
           password: 'hashed_password',
         },
       });
+
+      expect(auditService.createAudit).toHaveBeenCalledWith(
+        expect.any(Object),
+        {
+          action: 'CREATE',
+          entityType: EntityType.USER,
+          entityId: mockUsers.id,
+          userId: 'user-id',
+          details: { name: dto.name }
+        }
+      );
+
       expect(result).toEqual(mockUsers);
     });
 
@@ -185,6 +227,18 @@ describe('UsersService', () => {
           name: 'User B',
         },
       });
+
+      expect(auditService.createAudit).toHaveBeenCalledWith(
+        expect.any(Object),
+        {
+          action: 'UPDATE',
+          entityType: EntityType.USER,
+          entityId: mockUsers.id,
+          userId: 'user-id',
+          details: { name: 'User B' }
+        }
+      );
+
       expect(result).toEqual(mockUsers);
     });
 

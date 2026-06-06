@@ -8,12 +8,17 @@ import {
 import { DatabaseService } from 'src/database/database.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { AuditService } from 'src/audit/audit.service';
+import { AuditAction, EntityType } from '@prisma/client';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly auditService: AuditService,
+  ) {}
 
-  async create(dto: CreateCategoryDto) {
+  async create(dto: CreateCategoryDto, userId: string) {
     try {
       const categoryExists = await this.findByName(dto.name);
 
@@ -21,8 +26,20 @@ export class CategoriesService {
         throw new ConflictException('Category already exists');
       }
 
-      const category = await this.databaseService.category.create({
-        data: dto,
+      const category = await this.databaseService.$transaction(async (tx) => {
+        const newCategory = await tx.category.create({
+          data: dto,
+        });
+
+        await this.auditService.createAudit(tx, {
+          entityType: EntityType.CATEGORY,
+          entityId: newCategory.id.toString(),
+          action: AuditAction.CREATE,
+          userId,
+          details: { name: newCategory.name },
+        });
+
+        return newCategory;
       });
 
       return category;
@@ -92,13 +109,29 @@ export class CategoriesService {
     }
   }
 
-  async update(id: number, dto: UpdateCategoryDto) {
+  async update(
+    id: number,
+    dto: UpdateCategoryDto,
+    userId: string
+  ) {
     try {
       await this.findOne(id);
 
-      const category = await this.databaseService.category.update({
-        where: { id },
-        data: dto,
+      const category = await this.databaseService.$transaction(async (tx) => {
+        const updatedCategory = await tx.category.update({
+          where: { id },
+          data: dto,
+        });
+
+        await this.auditService.createAudit(tx, {
+          entityType: EntityType.CATEGORY,
+          entityId: updatedCategory.id.toString(),
+          action: AuditAction.UPDATE,
+          userId,
+          details: { name: updatedCategory.name },
+        });
+
+        return updatedCategory;
       });
 
       return category;
@@ -111,12 +144,24 @@ export class CategoriesService {
     }
   }
 
-  async delete(id: number) {
+  async delete(id: number, userId: string) {
     try {
       await this.findOne(id)
 
-      const category = await this.databaseService.category.delete({
-        where: { id },
+      const category = await this.databaseService.$transaction(async (tx) => {
+        const deletedCategory = await tx.category.delete({
+          where: { id },
+        });
+
+        await this.auditService.createAudit(tx, {
+          entityType: EntityType.CATEGORY,
+          entityId: deletedCategory.id.toString(),
+          action: AuditAction.DELETE,
+          userId,
+          details: { name: deletedCategory.name },
+        });
+
+        return deletedCategory;
       });
 
       return category;

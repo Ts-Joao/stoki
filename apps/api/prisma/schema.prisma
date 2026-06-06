@@ -16,6 +16,7 @@ model User {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   products Product[]
+  audits   Audit[]
   stockMovents StockMovent[]
 
   @@index([name])
@@ -86,6 +87,22 @@ model StockMovent {
   @@map("stock_movent")
 }
 
+model Audit {
+  id            String    @id @default(uuid())
+  entityType    EntityType @map("entity_type")
+  entityId      String    @map("entity_id")
+  action        AuditAction
+  details       Json?
+  timestamp     DateTime  @default(now())
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id])
+
+  @@index([timestamp])
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@map("audit")
+}
+
 enum UserRole {
   ADMIN
   WAREHOUSE_STAFF
@@ -95,4 +112,18 @@ enum StockMoventType {
   IN
   OUT
   ADJUSTMENT
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  RESTORE
+}
+
+enum EntityType {
+  USER
+  PRODUCT
+  CATEGORY
+  LOCATION
 }

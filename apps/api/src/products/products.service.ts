@@ -10,7 +10,8 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { LocationsService } from 'src/locations/locations.service';
 import { CategoriesService } from 'src/categories/categories.service';
 import { TypeCreateMoviment } from '../movements/types/create-moviment.type';
-import { Prisma, Product, StockMoventType } from '@prisma/client';
+import { AuditAction, EntityType, Prisma, Product, StockMoventType } from '@prisma/client';
+import { AuditService } from 'src/audit/audit.service';
 
 @Injectable()
 export class ProductsService {
@@ -18,6 +19,7 @@ export class ProductsService {
     private readonly databaseServce: DatabaseService,
     private readonly categoriesService: CategoriesService,
     private readonly locationsService: LocationsService,
+    private readonly auditService: AuditService,
   ) {}
 
   async create(dto: CreateProductDto, userId: string) {
@@ -39,6 +41,14 @@ export class ProductsService {
           quantity: dto.stock,
           type: 'IN',
           note: dto.description ?? 'Produto adicionado ao estoque',
+        });
+
+        await this.auditService.createAudit(tx, {
+          entityType: EntityType.PRODUCT,
+          entityId: newProduct.id,
+          action: AuditAction.CREATE,
+          userId,
+          details: { stock: dto.stock },
         });
 
         return newProduct;
@@ -127,6 +137,20 @@ export class ProductsService {
             type: movType,
           });
 
+          await this.auditService.createAudit(tx, {
+            entityType: EntityType.PRODUCT,
+            entityId: productUpdated.id,
+            action: AuditAction.UPDATE,
+            userId: productUpdated.userId,
+            details: {
+              oldStock: product.stock,
+              newStock: productUpdated.stock,
+              difference: quantityDiff,
+              type: movType,
+              note,
+            },
+          });
+
           return productUpdated;
         },
       );
@@ -145,13 +169,25 @@ export class ProductsService {
     try {
       await this.findOne(id);
 
-      return this.databaseServce.product.update({
-        where: {
-          id,
-        },
-        data: {
-          deletedAt: new Date(Date.now() + 30 * 60 * 1000),
-        },
+      return this.databaseServce.$transaction(async (tx) => {
+        const productUpdated = await tx.product.update({
+          where: {
+            id,
+          },
+          data: {
+            deletedAt: new Date(Date.now() + 30 * 60 * 1000),
+          },
+        });
+
+        await this.auditService.createAudit(tx, {
+          entityType: EntityType.PRODUCT,
+          entityId: productUpdated.id,
+          action: AuditAction.DELETE,
+          userId: productUpdated.userId,
+          details: { stock: productUpdated.stock },
+        });
+
+        return productUpdated;
       });
     } catch (error) {
       if (error instanceof HttpException) {
@@ -166,13 +202,25 @@ export class ProductsService {
     try {
       await this.findOne(id);
 
-      return this.databaseServce.product.update({
-        where: {
-          id,
-        },
-        data: {
-          deletedAt: null,
-        },
+      return this.databaseServce.$transaction(async (tx) => {
+        const productUpdated = await tx.product.update({
+          where: {
+            id,
+          },
+          data: {
+            deletedAt: null,
+          },
+        });
+
+        await this.auditService.createAudit(tx, {
+          entityType: EntityType.PRODUCT,
+          entityId: productUpdated.id,
+          action: AuditAction.RESTORE,
+          userId: productUpdated.userId,
+          details: { stock: productUpdated.stock },
+        });
+
+        return productUpdated;
       });
     } catch (error) {
       if (error instanceof HttpException) {

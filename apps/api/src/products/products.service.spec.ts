@@ -6,12 +6,15 @@ import { LocationsService } from '../locations/locations.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { AuditService } from 'src/audit/audit.service';
+import { EntityType } from '@prisma/client';
 
 describe('ProductsService', () => {
   let productsService: ProductsService;
   let databaseService: DatabaseService;
   let categoriesService: CategoriesService;
   let locationsService: LocationsService;
+  let auditService: AuditService;
 
   let productCreateMock: jest.Mock;
   let productFindUniqueMock: jest.Mock;
@@ -19,6 +22,7 @@ describe('ProductsService', () => {
   let productUpdateMock: jest.Mock;
   let stockMovementCreateMock: jest.Mock;
   let transactionMock: jest.Mock;
+  let auditCreateMock: jest.Mock;
 
   const mockProduct = {
     id: 'product-id',
@@ -38,6 +42,7 @@ describe('ProductsService', () => {
     productFindManyMock = jest.fn().mockResolvedValue([mockProduct]);
     productUpdateMock = jest.fn().mockResolvedValue(mockProduct);
     stockMovementCreateMock = jest.fn().mockResolvedValue({ id: 'movement-id' });
+    auditCreateMock = jest.fn().mockResolvedValue({ id: 'audit-id' });
 
     transactionMock = jest.fn().mockImplementation(async (callback) => {
       return callback({
@@ -47,6 +52,9 @@ describe('ProductsService', () => {
         },
         stockMovent: {
           create: stockMovementCreateMock,
+        },
+        audit: {
+          createAudit: auditCreateMock,
         },
       });
     });
@@ -77,6 +85,12 @@ describe('ProductsService', () => {
             findOne: jest.fn().mockResolvedValue({ id: 1, name: 'Location 1' }),
           },
         },
+        {
+          provide: AuditService,
+          useValue: {
+            createAudit: auditCreateMock,
+          },
+        },
       ],
     }).compile();
 
@@ -84,6 +98,7 @@ describe('ProductsService', () => {
     databaseService = module.get<DatabaseService>(DatabaseService);
     categoriesService = module.get<CategoriesService>(CategoriesService);
     locationsService = module.get<LocationsService>(LocationsService);
+    auditService = module.get<AuditService>(AuditService);
   });
 
   it('should be defined', () => {
@@ -118,6 +133,16 @@ describe('ProductsService', () => {
           note: dto.description,
         },
       });
+      expect(auditService.createAudit).toHaveBeenCalledWith(
+        expect.any(Object),
+        {
+          action: 'CREATE',
+          entityType: EntityType.PRODUCT,
+          entityId: mockProduct.id,
+          userId: 'user-id',
+          details: { stock: 10 }
+        }
+      );
       expect(result).toEqual(mockProduct);
     });
 

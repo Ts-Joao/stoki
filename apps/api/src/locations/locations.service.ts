@@ -8,12 +8,17 @@ import {
 import { DatabaseService } from 'src/database/database.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
+import { AuditService } from 'src/audit/audit.service';
+import { AuditAction, EntityType } from '@prisma/client';
 
 @Injectable()
 export class LocationsService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly auditService: AuditService,
+  ) {}
 
-  async create(dto: CreateLocationDto) {
+  async create(dto: CreateLocationDto, userId: string) {
     try {
       const locationExists = await this.findByName(dto.name);
 
@@ -21,8 +26,20 @@ export class LocationsService {
         throw new ConflictException('Location already exists');
       }
 
-      const location = await this.databaseService.location.create({
-        data: dto
+      const location = await this.databaseService.$transaction(async (tx) => {
+        const newLocation = await tx.location.create({
+          data: dto
+        });
+
+        await this.auditService.createAudit(tx, {
+          entityType: EntityType.LOCATION,
+          entityId: newLocation.id.toString(),
+          action: AuditAction.CREATE,
+          userId,
+          details: { name: newLocation.name },
+        });
+
+        return newLocation;
       });
 
       return location;
@@ -90,14 +107,32 @@ export class LocationsService {
     }
   }
 
-  async update(id: number, dto: UpdateLocationDto) {
+  async update(
+    id: number,
+    dto: UpdateLocationDto,
+    userId: string
+  ) {
     try {
       await this.findOne(id);
 
-      return await this.databaseService.location.update({
-        where: { id },
-        data: dto,
+      const location = await this.databaseService.$transaction(async (tx) => {
+        const updatedLocation = await tx.location.update({
+          where: { id },
+          data: dto,
+        });
+
+        await this.auditService.createAudit(tx, {
+          entityType: EntityType.LOCATION,
+          entityId: updatedLocation.id.toString(),
+          action: AuditAction.UPDATE,
+          userId,
+          details: { name: updatedLocation.name },
+        });
+
+        return updatedLocation;
       });
+
+      return location;
     } catch (error) {
       if(error instanceof HttpException) {
         throw error;
@@ -107,13 +142,27 @@ export class LocationsService {
     }
   }
 
-  async delete(id: number) {
+  async delete(id: number, userId: string) {
     try {
       await this.findOne(id);
 
-      return await this.databaseService.location.delete({
-        where: { id },
+      const deleteLocation = await this.databaseService.$transaction(async (tx) => {
+        const location = await tx.location.delete({
+          where: { id },
+        });
+
+        await this.auditService.createAudit(tx, {
+          entityType: EntityType.LOCATION,
+          entityId: location.id.toString(),
+          action: AuditAction.DELETE,
+          userId,
+          details: { name: location.name },
+        });
+
+        return location;
       });
+
+      return deleteLocation;
     } catch (error) {
       if(error instanceof HttpException) {
         throw error;
