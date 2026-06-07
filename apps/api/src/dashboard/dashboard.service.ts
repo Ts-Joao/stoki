@@ -66,6 +66,76 @@ export class DashboardService {
     }
   }
 
+  async getTopCategories() {
+    try {
+      const categories = await this.databaseService.category.findMany({
+        include: {
+          products: {
+            select: {
+              id: true,
+              stock: true,
+            },
+          },
+        },
+        orderBy: {
+          products: {
+            _count: 'desc',
+          },
+        },
+        take: 5,
+      });
+
+      return categories;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Failed to get categories');
+    }
+  }
+
+  async getMonthlyMovements() {
+    try {
+      const months = this.getMonthsAgo();
+      const data: { month: string; entries: number; exits: number }[] = [];
+
+      for (const month of months) {
+        const movement = await this.databaseService.stockMovent.groupBy({
+          by: ['type'],
+          _sum: {
+            quantity: true,
+          },
+          where: {
+            createdAt: {
+              gte: month.start,
+              lte: month.end,
+            },
+          },
+          orderBy: {
+            type: 'desc',
+          },
+        });
+
+        data.push({
+          month: month.start.toLocaleDateString('pt-BR', {
+            month: 'short',
+          }),
+          entries: movement.find((m) => m.type === 'IN')?._sum.quantity ?? 0,
+          exits: movement.find((m) => m.type === 'OUT')?._sum.quantity ?? 0,
+        });
+      }
+
+      return data;
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Failed to get revenue');
+    }
+  }
+
   async getAllProducts() {
     try {
       const products = await this.databaseService.product.count({
@@ -151,5 +221,23 @@ export class DashboardService {
 
       throw new InternalServerErrorException('Failed to get movements today');
     }
+  }
+
+  private getMonthsAgo() {
+    const today = new Date();
+    const months: { start: Date; end: Date }[] = [];
+
+    for (let i = 0; i < 6; i++) {
+      const start = new Date(today.getFullYear(), today.getMonth() - i, 1);
+
+      const end = new Date(today.getFullYear(), today.getMonth() - i + 1, 0);
+
+      months.push({
+        start,
+        end,
+      });
+    }
+
+    return months;
   }
 }

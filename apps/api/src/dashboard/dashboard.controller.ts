@@ -20,4 +20,14 @@ export class DashboardController {
   async getRecentMovements() {
     return this.dashboardService.getRecentMovements();
   }
+
+  @Get('top-categories')
+  async getTopCategories() {
+    return this.dashboardService.getTopCategories();
+  }
+
+  @Get('monthly-movements')
+  async getMonthlyMovements() {
+    return this.dashboardService.getMonthlyMovements();
+  }
 }
