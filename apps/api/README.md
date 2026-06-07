@@ -1,10 +1,11 @@
 <div align="center">
+  <img src="../../.github/logo.png" alt="Stoki API" width="50%" />
+
 
   # Stoki API
 
   API REST para gerenciamento de estoque construída com NestJS, Prisma e PostgreSQL.
 
-  <img src="../../.github/banner-api.png" alt="Stoki API" />
 </div>
 
 ## Tecnologias
