@@ -7,16 +7,15 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  name         String   @unique
+  id           String        @id @default(uuid())
+  name         String        @unique
   password     String
-  refreshToken String?  @map("refresh_token")
-  role         UserRole @default(WAREHOUSE_STAFF)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  products Product[]
-  audits   Audit[]
+  refreshToken String?       @map("refresh_token")
+  role         UserRole      @default(WAREHOUSE_STAFF)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  audits       Audit[]
+  products     Product[]
   stockMovents StockMovent[]
 
   @@index([name])
@@ -30,15 +29,14 @@ model Product {
   stock        Int
   createdAt    DateTime      @default(now()) @map("created_at")
   updatedAt    DateTime      @updatedAt @map("updated_at")
-  deletedAt    DateTime?     @map("deleted_at")
-  minStock     Int           @default(1) @map("min_stock")
-  
   categoryId   Int
+  deletedAt    DateTime?     @map("deleted_at")
   locationId   Int
+  minStock     Int           @default(1) @map("min_stock")
   userId       String
-  user         User          @relation(fields: [userId], references: [id])
   category     Category      @relation(fields: [categoryId], references: [id])
   location     Location      @relation(fields: [locationId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
   stockMovents StockMovent[]
 
   @@index([name])
@@ -48,10 +46,10 @@ model Product {
 }
 
 model Category {
-  id        Int       @id @default(autoincrement())
   name      String    @unique
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
+  id        Int       @id @default(autoincrement())
   products  Product[]
 
   @@index([name])
@@ -73,12 +71,11 @@ model StockMovent {
   id        String          @id @default(uuid())
   type      StockMoventType
   quantity  Int?
-  note      String?
   createdAt DateTime        @default(now()) @map("created_at")
   updatedAt DateTime        @updatedAt @map("updated_at")
-
   productId String
   userId    String
+  note      String?
   product   Product         @relation(fields: [productId], references: [id])
   user      User            @relation(fields: [userId], references: [id])
 
@@ -88,14 +85,14 @@ model StockMovent {
 }
 
 model Audit {
-  id            String    @id @default(uuid())
-  entityType    EntityType @map("entity_type")
-  entityId      String    @map("entity_id")
-  action        AuditAction
-  details       Json?
-  timestamp     DateTime  @default(now())
-  userId        String?
-  user          User?     @relation(fields: [userId], references: [id])
+  id         String      @id @default(uuid())
+  entityType EntityType  @map("entity_type")
+  entityId   String      @map("entity_id")
+  action     AuditAction
+  details    Json?
+  timestamp  DateTime    @default(now())
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id])
 
   @@index([timestamp])
   @@index([entityType, entityId])
