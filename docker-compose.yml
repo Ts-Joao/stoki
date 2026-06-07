@@ -13,5 +13,18 @@ services:
     volumes:
       - stoki-db-data:/var/lib/postgresql/data
 
+  db-test:
+    image: postgres:17
+    container_name: stoki-db-test
+    environment:
+      POSTGRES_DB: stoki_test
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - stoki-db-test-data:/var/lib/postgresql/data
+
 volumes:
   stoki-db-data:
+  stoki-db-test-data:
