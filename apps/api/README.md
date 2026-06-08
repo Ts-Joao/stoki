@@ -1,102 +1,172 @@
-# Stoki — API
+<div align="center">
+  <img src="../../.github/logo.png" alt="Stoki API" width="50%" />
 
-Backend do sistema de gerenciamento de estoque, construído com NestJS e Prisma ORM.
+
+  # Stoki API
+
+  API REST para gerenciamento de estoque construída com NestJS, Prisma e PostgreSQL.
+
+</div>
 
 ## Tecnologias
 
-- **NestJS** com TypeScript
-- **Prisma ORM** com PostgreSQL
-- **JWT** para autenticação
-- **class-validator** para validação de DTOs
+**Backend:** NestJS · TypeScript · Prisma ORM · PostgreSQL · JWT
+
+**Qualidade:** Jest · Supertest · ESLint · Prettier
+
+**DevOps:** GitHub Actions · Docker
+
+---
+
+## Documentação
+
+Com a API rodando, acesse o Swagger em `http://localhost:8000/api/docs`.
+
+---
 
 ## Estrutura
 
-```
-api/
-├── src/
-│   ├── auth/             → Autenticação (JWT, guards, estratégias)
-│   ├── users/            → Módulo de usuários
-│   ├── products/         → Módulo de produtos
-│   ├── entries/          → Módulo de entradas de estoque
-│   ├── exits/            → Módulo de saídas de estoque
-│   ├── common/           → Guards, decorators e utils compartilhados
-│   ├── app.module.ts
-│   └── main.ts
-├── prisma/
-│   ├── schema.prisma
-│   └── migrations/
-├── .env.example
-└── tsconfig.json
+```text
+src/
+├── auth/
+├── users/
+├── products/
+├── categories/
+├── locations/
+├── stock-movement/
+├── audit/
+├── dashboard/
+├── common/
+│   ├── pagination/
+│   ├── guards/
+│   ├── decorators/
+│   └── filters/
+├── database/
+└── app.module.ts
 ```
 
-## Variáveis de ambiente
+---
 
-Crie um `.env` baseado no `.env.example`:
+## Módulos
+
+| Módulo         | Descrição                     |
+| -------------- | ----------------------------- |
+| Auth           | Autenticação e autorização    |
+| Users          | Gerenciamento de usuários     |
+| Products       | Gerenciamento de produtos     |
+| Categories     | Categorias dos produtos       |
+| Locations      | Localizações físicas          |
+| Stock Movement | Entradas, saídas e ajustes    |
+| Dashboard      | Métricas e indicadores        |
+| Audit          | Histórico de ações do sistema |
+
+---
+
+## Autenticação
+
+JWT com access token + refresh token.
+
+```http
+POST /api/auth/login
+POST /api/auth/refresh
+
+Authorization: Bearer <access_token>
+```
+
+---
+
+## Movimentações de estoque
+
+Registradas automaticamente a cada operação.
+
+| Tipo         | Descrição            |
+| ------------ | -------------------- |
+| `IN`         | Entrada de estoque   |
+| `OUT`        | Saída de estoque     |
+| `ADJUSTMENT` | Ajuste administrativo|
+
+---
+
+## Paginação
+
+Endpoints que suportam paginação aceitam `?page=1&limit=10`:
+
+```json
+{
+  "data": [],
+  "meta": { "page": 1, "limit": 10, "total": 50, "totalPages": 5 }
+}
+```
+
+---
+
+## Instalação
+
+```bash
+git clone 'https://github.com/Ts-Joao/stoki.git'
+pnpm install
+```
+
+Configure o `.env` em `apps/api/`:
 
 ```env
-# Banco de dados
-DATABASE_URL="postgresql://user:password@localhost:5432/stoki"
-
-# JWT
-JWT_ACCESS_SECRET=sua_access_secret
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_SECRET=sua_refresh_secret
-JWT_REFRESH_EXPIRES_IN=7d
-
-# App
-PORT=3001
+DATABASE_URL=
+JWT_SECRET=
+JWT_REFRESH_SECRET=
 ```
 
-## Instalação e uso
+Execute as migrações:
 
 ```bash
-# A partir da raiz do monorepo
+pnpm --filter @stoki/api exec prisma migrate dev
+pnpm --filter @stoki/api exec prisma generate
+```
+
+---
+
+## Rodando
+
+**Desenvolvimento**
+```bash
 pnpm --filter @stoki/api dev
-
-# Ou dentro da pasta
-cd apps/api
-pnpm dev
 ```
 
-A API roda em `http://localhost:3001/api` por padrão.
+**Produção**
+```bash
+pnpm --filter @stoki/api build
+pnpm --filter @stoki/api start:prod
+```
 
-## Banco de dados
+**Docker**
+```bash
+docker compose up --build
+```
+
+---
+
+## Testes
 
 ```bash
-# Rodar migrations
-pnpm --filter @stoki/api prisma migrate dev
-
-# Abrir Prisma Studio
-pnpm --filter @stoki/api prisma studio
-
-# Gerar client após alterações no schema
-pnpm --filter @stoki/api prisma generate
+pnpm --filter @stoki/api test        # unitários
+pnpm --filter @stoki/api test:cov    # cobertura
+pnpm --filter @stoki/api test:e2e    # E2E
 ```
 
-## Rotas principais
+---
 
-| Método | Rota                   | Descrição                        |
-|--------|------------------------|----------------------------------|
-| POST   | `/api/auth/login`      | Autenticação do usuário          |
-| POST   | `/api/auth/refresh`    | Renovação do access token        |
-| POST   | `/api/auth/logout`     | Encerramento de sessão           |
-| GET    | `/api/products`        | Listagem de produtos             |
-| POST   | `/api/products`        | Cadastro de produto              |
-| PATCH  | `/api/products/:id`    | Atualização de produto           |
-| DELETE | `/api/products/:id`    | Remoção de produto               |
-| GET    | `/api/entries`         | Listagem de entradas de estoque  |
-| POST   | `/api/entries`         | Registrar entrada                |
-| GET    | `/api/exits`           | Listagem de saídas de estoque    |
-| POST   | `/api/exits`           | Registrar saída                  |
+## Status
 
-## Scripts
+- [x] Autenticação JWT
+- [x] CRUD de usuários, produtos, categorias e localizações
+- [x] Controle de estoque
+- [x] Dashboard, auditoria e paginação
+- [x] Swagger, testes unitários, E2E e CI
+- [x] Docker
+- [ ] Deploy em produção
+- [ ] Integração com frontend
 
-| Comando              | Descrição                          |
-|----------------------|------------------------------------|
-| `pnpm dev`           | Servidor em modo watch             |
-| `pnpm build`         | Build de produção                  |
-| `pnpm start`         | Inicia o build (`node dist/main`)  |
-| `pnpm lint`          | ESLint                             |
-| `pnpm type-check`    | Verificação de tipos               |
-| `pnpm prisma migrate dev` | Roda migrations             |
-| `pnpm prisma studio` | Interface visual do banco          |
+---
+
+## Autor
+
+Desenvolvido por João Teixeira.

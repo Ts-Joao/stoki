@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:17
@@ -13,5 +11,30 @@ services:
     volumes:
       - stoki-db-data:/var/lib/postgresql/data
 
+  db-test:
+    image: postgres:17
+    container_name: stoki-db-test
+    environment:
+      POSTGRES_DB: stoki_test
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - stoki-db-test-data:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: stoki-api
+    env_file:
+      - apps/api/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
 volumes:
   stoki-db-data:
+  stoki-db-test-data:
