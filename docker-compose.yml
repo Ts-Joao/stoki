@@ -26,7 +26,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: apps/api/Dockerfile
     container_name: stoki-api
     env_file:
       - apps/api/.env
